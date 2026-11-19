@@ -60,7 +60,7 @@ generated schoolbook kernels pair `WIDE_MULU` with `ADD3A` to accumulate
 unsigned products. The extension-field and Hadamard kernels defer modular
 corrections until their outputs. [VM v1 fusion rules](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0033-ckb-vm-version-1/0033-ckb-vm-version-1.md#42-mop) · [VM v2 fusion rules](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0049-ckb-vm-version-2/0049-ckb-vm-version-2.md#specification)
 
-Fast-mode `make ckb-smoke` measurements with rustc 1.100.0 and
+Fast-mode `make ckb-smoke` measurements at `6a3bcc6` with rustc 1.100.0 and
 ckb-debugger 1.1.1 used script version 2 and count 0 at each level.
 
 | Level | Before | After | Reduction |
@@ -76,7 +76,11 @@ disabled and 80,209,253 with it enabled. The VM executed 3,289,260
 The final flamegraph's largest leaves were extension-field multiplication
 (43,461,093 cycles) and squaring (19,720,509 cycles).
 
-Inlining the field kernels and fixed-size memory copies increases the
-unstripped release ELF from 661,424 to 1,135,160 bytes. The truncated
-signature still returns guest exit 2 and costs 298,262 cycles, up from
-199,519.
+Inlining the field kernels and fixed-size memory copies increased the
+unstripped release ELF from 661,424 to 1,135,160 bytes at `6a3bcc6`.
+
+Restoring LLVM's default `memcpy` threshold while retaining MOP and
+`-max-store-memset=96` reduced the ELF to **699,536 bytes**. With this build,
+the count-0 vectors take **85,471,175** cycles at Level 1, **366,104,127**
+at Level 3, and **691,169,558** at Level 5. The truncated signature returns
+guest exit 2 in 188,676 cycles.
