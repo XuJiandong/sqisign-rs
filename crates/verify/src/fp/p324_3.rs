@@ -186,6 +186,9 @@ pub(crate) fn modneg(n: &mut [u64; NLIMBS], b: &[u64; NLIMBS]) {
     let _ = prop(n);
 }
 
+#[cfg(target_arch = "riscv64")]
+pub(crate) use super::p324_3_riscv64::modmul;
+#[cfg(not(target_arch = "riscv64"))]
 /// `c <- a * b * R^-1 mod 2p`. Schoolbook 6x6 product in radix `2^55`
 /// with interleaved Montgomery folding: each emitted low limb `v_i` is
 /// added back at position `i + 5` as `v_i * PTOP`, which is
@@ -613,7 +616,8 @@ pub(crate) fn modsqrt(r: &mut [u64; NLIMBS], x: &[u64; NLIMBS], h: Option<&[u64;
 #[inline]
 pub(crate) fn modint(a: &mut [u64; NLIMBS], x: u64) {
     let mut m = [0u64; NLIMBS];
-    m[0] = x;
+    m[0] = x & MASK;
+    m[1] = x >> RADIX;
     nres(a, &m);
 }
 

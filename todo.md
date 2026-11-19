@@ -8,7 +8,7 @@ callee's work is counted once.
 
 | Priority | Level 1 bottleneck | Exclusive cycles | Profile share | Status |
 | --- | --- | ---: | ---: | --- |
-| 1 | `p324_3::modmul` (six-limb Montgomery multiplication) | 112,407,594 | 35.66% | Open |
+| 1 | `p324_3::modmul` (six-limb Montgomery multiplication) | 112,407,594 | 35.66% | Done |
 | 2 | `FpBackend::sub` (limb subtraction and modular correction) | 70,707,835 | 22.43% | Open |
 | 3 | `FpBackend::add` (limb addition and modular correction) | 68,861,226 | 21.84% | Open |
 
@@ -37,3 +37,9 @@ For the release ELF, resolve the hexadecimal frame addresses against
 `nm -nC` on the same binary. Sum the weight of each folded stack under its
 last frame for the exclusive ranking. All optimization results below use
 the fast-mode benchmark.
+
+## Measured improvements
+
+| Priority | Change | Fast-mode cycles | Saved from previous build |
+| --- | --- | ---: | ---: |
+| 1 | Share diagonal products across Montgomery multiplication columns (21 wide products per call, down from 36) | 297,435,342 | 17,946,056 |

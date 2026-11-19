@@ -257,6 +257,16 @@ fn sliding_window(exp: &BigUint) -> Vec<ChainOp> {
 // Code emission
 // ---------------------------------------------------------------------
 
+// Select an RV64 kernel at compile time, retaining the generated portable kernel
+// on the other architectures.
+fn rv64_kernel(o: &mut String, s: &PrimeSpec, name: &str) {
+    if s.name == "p324_3" {
+        writeln!(o, "#[cfg(target_arch = \"riscv64\")]").unwrap();
+        writeln!(o, "pub(crate) use super::p324_3_riscv64::{name};").unwrap();
+        writeln!(o, "#[cfg(not(target_arch = \"riscv64\"))]").unwrap();
+    }
+}
+
 fn generate(s: &PrimeSpec) -> String {
     let n = s.nlimbs;
     let r = s.radix;
@@ -296,6 +306,11 @@ fn generate(s: &PrimeSpec) -> String {
     let mut o = String::new();
     let top = n - 1;
     let top_m1 = top - 1;
+    let small_limbs = if s.name == "p324_3" {
+        "m[0] = x & MASK;\n    m[1] = x >> RADIX;"
+    } else {
+        "m[0] = x;"
+    };
     let upper = s.name.to_uppercase();
     // an inline-assembly backend replaces this one's trait implementation
     // on x86-64; the functions here then go unused
@@ -501,6 +516,7 @@ fn generate(s: &PrimeSpec) -> String {
     .unwrap();
 
     // ---- modmul ----------------------------------------------------------
+    rv64_kernel(&mut o, s, "modmul");
     writeln!(
         o,
         "/// `c <- a * b * R^-1 mod 2p`. Schoolbook {n}x{n} product in radix `2^{r}`\n\
@@ -760,7 +776,7 @@ fn generate(s: &PrimeSpec) -> String {
          #[inline]\n\
          pub(crate) fn modint(a: &mut [u64; NLIMBS], x: u64) {{\n\
          \x20   let mut m = [0u64; NLIMBS];\n\
-         \x20   m[0] = x;\n\
+         \x20   {small_limbs}\n\
          \x20   nres(a, &m);\n\
          }}\n\n\
          /// `c <- a * x mod 2p` for a small integer `x`.\n\
