@@ -156,6 +156,9 @@ pub(crate) fn modadd(n: &mut [u64; NLIMBS], a: &[u64; NLIMBS], b: &[u64; NLIMBS]
     let _ = prop(n);
 }
 
+#[cfg(target_arch = "riscv64")]
+pub(crate) use super::p324_3_riscv64::modsub;
+#[cfg(not(target_arch = "riscv64"))]
 /// `n <- a - b mod 2p` (lazily reduced).
 #[inline]
 pub(crate) fn modsub(n: &mut [u64; NLIMBS], a: &[u64; NLIMBS], b: &[u64; NLIMBS]) {

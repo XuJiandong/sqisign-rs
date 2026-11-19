@@ -1,6 +1,6 @@
 //! Level I field kernels for RV64, using the portable radix-55 layout.
 
-use super::p324_3::{MASK, NLIMBS, RADIX};
+use super::p324_3::{MASK, NLIMBS, RADIX, TWO_PTOP};
 
 type Limbs = [u64; NLIMBS];
 
@@ -48,6 +48,30 @@ pub(crate) fn modmul(out: &mut Limbs, a: &Limbs, b: &Limbs) {
     out[5] = carry;
 }
 
+/// Normalize signed radix-55 coefficients whose value is in [-2p, 2p).
+#[inline]
+fn reduce_signed(out: &mut Limbs, limbs: [i64; NLIMBS]) {
+    // Determine the sign using only carries. The correction for a negative
+    // result is sparse: 2p = TWO_PTOP * (2^55)^5 - 2.
+    let mut carry = 0;
+    for &limb in &limbs[..5] {
+        carry = (limb + carry) >> RADIX;
+    }
+    let negative = (limbs[5] + carry) >> 63;
+    carry = -(negative & 2);
+    for i in 0..5 {
+        let digit = limbs[i] + carry;
+        out[i] = digit as u64 & MASK;
+        carry = digit >> RADIX;
+    }
+    out[5] = (limbs[5] + carry + (negative & TWO_PTOP as i64)) as u64;
+}
+
+#[inline]
+pub(crate) fn modsub(out: &mut Limbs, a: &Limbs, b: &Limbs) {
+    reduce_signed(out, core::array::from_fn(|i| a[i] as i64 - b[i] as i64));
+}
+
 #[cfg(all(test, not(target_arch = "riscv64")))]
 mod tests {
     extern crate std;
@@ -90,6 +114,11 @@ mod tests {
                 assert_eq!(actual, expected, "a={a:x?}, b={b:x?}");
             }
         }
+    }
+
+    #[test]
+    fn subtraction_matches_portable() {
+        compare(modsub, p324_3::modsub);
     }
 
     #[test]

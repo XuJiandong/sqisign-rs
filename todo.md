@@ -9,7 +9,7 @@ callee's work is counted once.
 | Priority | Level 1 bottleneck | Exclusive cycles | Profile share | Status |
 | --- | --- | ---: | ---: | --- |
 | 1 | `p324_3::modmul` (six-limb Montgomery multiplication) | 112,407,594 | 35.66% | Done |
-| 2 | `FpBackend::sub` (limb subtraction and modular correction) | 70,707,835 | 22.43% | Open |
+| 2 | `FpBackend::sub` (limb subtraction and modular correction) | 70,707,835 | 22.43% | Done |
 | 3 | `FpBackend::add` (limb addition and modular correction) | 68,861,226 | 21.84% | Open |
 
 The next two leaf costs were the iterator's `nth` during carry propagation
@@ -43,3 +43,4 @@ the fast-mode benchmark.
 | Priority | Change | Fast-mode cycles | Saved from previous build |
 | --- | --- | ---: | ---: |
 | 1 | Share diagonal products across Montgomery multiplication columns (21 wide products per call, down from 36) | 297,435,342 | 17,946,056 |
+| 2 | Compute the subtraction borrow in registers and apply the sparse `2p` correction while writing the result | 218,260,463 | 79,174,879 |

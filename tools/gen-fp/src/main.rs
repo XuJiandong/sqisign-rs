@@ -480,6 +480,7 @@ fn generate(s: &PrimeSpec) -> String {
          \x20   let _ = prop(n);\n}}\n"
     )
     .unwrap();
+    rv64_kernel(&mut o, s, "modsub");
     writeln!(o, "/// `n <- a - b mod 2p` (lazily reduced).\n#[inline]").unwrap();
     writeln!(
         o,
