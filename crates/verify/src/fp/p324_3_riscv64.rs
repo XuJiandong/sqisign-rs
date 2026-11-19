@@ -68,6 +68,15 @@ fn reduce_signed(out: &mut Limbs, limbs: [i64; NLIMBS]) {
 }
 
 #[inline]
+pub(crate) fn modadd(out: &mut Limbs, a: &Limbs, b: &Limbs) {
+    // a + b - 2p lies in [-2p, 2p), the same interval as a subtraction.
+    let mut sum = core::array::from_fn(|i| (a[i] + b[i]) as i64);
+    sum[0] += 2;
+    sum[5] -= TWO_PTOP as i64;
+    reduce_signed(out, sum);
+}
+
+#[inline]
 pub(crate) fn modsub(out: &mut Limbs, a: &Limbs, b: &Limbs) {
     reduce_signed(out, core::array::from_fn(|i| a[i] as i64 - b[i] as i64));
 }
@@ -114,6 +123,11 @@ mod tests {
                 assert_eq!(actual, expected, "a={a:x?}, b={b:x?}");
             }
         }
+    }
+
+    #[test]
+    fn addition_matches_portable() {
+        compare(modadd, p324_3::modadd);
     }
 
     #[test]

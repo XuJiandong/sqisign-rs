@@ -10,7 +10,7 @@ callee's work is counted once.
 | --- | --- | ---: | ---: | --- |
 | 1 | `p324_3::modmul` (six-limb Montgomery multiplication) | 112,407,594 | 35.66% | Done |
 | 2 | `FpBackend::sub` (limb subtraction and modular correction) | 70,707,835 | 22.43% | Done |
-| 3 | `FpBackend::add` (limb addition and modular correction) | 68,861,226 | 21.84% | Open |
+| 3 | `FpBackend::add` (limb addition and modular correction) | 68,861,226 | 21.84% | Done |
 
 The next two leaf costs were the iterator's `nth` during carry propagation
 (23,062,772 cycles) and the compiler's `memcpy` (14,678,261 cycles).
@@ -44,3 +44,8 @@ the fast-mode benchmark.
 | --- | --- | ---: | ---: |
 | 1 | Share diagonal products across Montgomery multiplication columns (21 wide products per call, down from 36) | 297,435,342 | 17,946,056 |
 | 2 | Compute the subtraction borrow in registers and apply the sparse `2p` correction while writing the result | 218,260,463 | 79,174,879 |
+| 3 | Reduce the biased sum `a + b - 2p` with the same signed-limb correction | 144,078,977 | 74,181,486 |
+
+The three changes saved **171,302,421 cycles (54.32%)**. Each measured
+build returned guest exit 0. The final full-mode profile attributed
+94,461,534 cycles to Montgomery multiplication, down from 112,407,594.

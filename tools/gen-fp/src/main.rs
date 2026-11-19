@@ -461,6 +461,7 @@ fn generate(s: &PrimeSpec) -> String {
     .unwrap();
 
     // ---- add / sub / neg -----------------------------------------------
+    rv64_kernel(&mut o, s, "modadd");
     writeln!(o, "/// `n <- a + b mod 2p` (lazily reduced).\n#[inline]").unwrap();
     writeln!(
         o,
