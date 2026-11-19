@@ -52,6 +52,9 @@
 #![cfg_attr(target_arch = "x86_64", deny(unsafe_code))]
 #![warn(missing_docs)]
 
+#[cfg(not(target_endian = "little"))]
+compile_error!("sqisign-verify requires a little-endian target");
+
 #[cfg(feature = "compact")]
 extern crate alloc;
 

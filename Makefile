@@ -16,3 +16,15 @@ verify:
 		$(if $(filter 1,$(NOCACHE)),--no-cache) \
 		-f images/hermetic-build/Containerfile \
 		.
+
+CKB_TARGET := riscv64imac-unknown-none-elf
+CKB_RUSTFLAGS := -C target-feature=-a,+zba,+zbb,+zbc,+zbs -C passes=lower-atomic
+CKB_TARGET_DIR := $(CURDIR)/target/ckb
+
+.PHONY: ckb-build ckb-smoke
+ckb-build:
+	RUSTFLAGS="$(CKB_RUSTFLAGS)" cargo build --manifest-path ckb/Cargo.toml \
+		--locked --release --target $(CKB_TARGET) --target-dir "$(CKB_TARGET_DIR)"
+
+ckb-smoke: ckb-build
+	python3 ckb/smoke.py "$(CKB_TARGET_DIR)/$(CKB_TARGET)/release/ckb-sqisign-verify"
