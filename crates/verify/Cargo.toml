@@ -30,3 +30,5 @@ default = []
 std = ["sha3/std"]
 # The dimension-4 compact format (experimental, level I): allocates.
 compact = []
+# Arrange RV64 field arithmetic for CKB-VM macro-operation fusion.
+ckb-vm = []

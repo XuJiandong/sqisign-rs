@@ -49,3 +49,34 @@ the fast-mode benchmark.
 The three changes saved **171,302,421 cycles (54.32%)**. Each measured
 build returned guest exit 0. The final full-mode profile attributed
 94,461,534 cycles to Montgomery multiplication, down from 112,407,594.
+
+## CKB-VM macro-op fusion
+
+A fresh Level 1 flamegraph at `d47e520` attributed 94,461,534 of
+143,931,397 execution cycles (65.63%) to Montgomery multiplication.
+The CKB build now splits each of its 21 signed products at bit 57, using
+`WIDE_MUL` and accumulating each radix-55 column in registers. The
+generated schoolbook kernels pair `WIDE_MULU` with `ADD3A` to accumulate
+unsigned products. The extension-field and Hadamard kernels defer modular
+corrections until their outputs. [VM v1 fusion rules](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0033-ckb-vm-version-1/0033-ckb-vm-version-1.md#42-mop) · [VM v2 fusion rules](https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0049-ckb-vm-version-2/0049-ckb-vm-version-2.md#specification)
+
+Fast-mode `make ckb-smoke` measurements with rustc 1.100.0 and
+ckb-debugger 1.1.1 used script version 2 and count 0 at each level.
+
+| Level | Before | After | Reduction |
+| --- | ---: | ---: | ---: |
+| 1 | 144,078,977 | 80,456,673 | 44.16% |
+| 3 | 962,459,760 | 341,312,953 | 64.54% |
+| 5 | 1,730,559,787 | 653,981,688 | 62.21% |
+
+Running the same optimized Level 1 ELF and arguments in ckb-vm 0.24.14
+with only `ISA_MOP` toggled gave 97,245,137 execution cycles with fusion
+disabled and 80,209,253 with it enabled. The VM executed 3,289,260
+`WIDE_MUL`, 67,725 `WIDE_MULU` and 67,725 `ADD3A` operations.
+The final flamegraph's largest leaves were extension-field multiplication
+(43,461,093 cycles) and squaring (19,720,509 cycles).
+
+Inlining the field kernels and fixed-size memory copies increases the
+unstripped release ELF from 661,424 to 1,135,160 bytes. The truncated
+signature still returns guest exit 2 and costs 298,262 cycles, up from
+199,519.

@@ -18,7 +18,8 @@ verify:
 		.
 
 CKB_TARGET := riscv64imac-unknown-none-elf
-CKB_RUSTFLAGS := -C target-feature=-a,+zba,+zbb,+zbc,+zbs -C passes=lower-atomic
+# Inline fixed-size copies and clears in the field and theta kernels.
+CKB_RUSTFLAGS := -C target-feature=-a,+zba,+zbb,+zbc,+zbs -C passes=lower-atomic -C llvm-args=-max-store-memcpy=192 -C llvm-args=-max-store-memset=96
 CKB_TARGET_DIR := $(CURDIR)/target/ckb
 
 .PHONY: ckb-build ckb-smoke

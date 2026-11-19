@@ -110,7 +110,7 @@ pub(crate) fn prop(n: &mut [u64; NLIMBS]) -> u64 {
     let mut carry: i64 = n[0] as i64;
     carry >>= RADIX;
     n[0] &= MASK;
-    for limb in n.iter_mut().take(5).skip(1) {
+    for limb in &mut n[1..5] {
         carry = carry.wrapping_add(*limb as i64);
         *limb = (carry as u64) & MASK;
         carry >>= RADIX;
@@ -203,67 +203,67 @@ pub(crate) use super::p324_3_riscv64::modmul;
 pub(crate) fn modmul(c: &mut [u64; NLIMBS], a: &[u64; NLIMBS], b: &[u64; NLIMBS]) {
     let ptop = PTOP as u128;
     let mut t: u128 = 0;
-    t = t.wrapping_add((a[0] as u128) * (b[0] as u128));
+    t = super::mul_add(t, a[0], b[0]);
     let v0 = (t as u64) & MASK;
     t >>= RADIX;
-    t = t.wrapping_add((a[0] as u128) * (b[1] as u128));
-    t = t.wrapping_add((a[1] as u128) * (b[0] as u128));
+    t = super::mul_add(t, a[0], b[1]);
+    t = super::mul_add(t, a[1], b[0]);
     let v1 = (t as u64) & MASK;
     t >>= RADIX;
-    t = t.wrapping_add((a[0] as u128) * (b[2] as u128));
-    t = t.wrapping_add((a[1] as u128) * (b[1] as u128));
-    t = t.wrapping_add((a[2] as u128) * (b[0] as u128));
+    t = super::mul_add(t, a[0], b[2]);
+    t = super::mul_add(t, a[1], b[1]);
+    t = super::mul_add(t, a[2], b[0]);
     let v2 = (t as u64) & MASK;
     t >>= RADIX;
-    t = t.wrapping_add((a[0] as u128) * (b[3] as u128));
-    t = t.wrapping_add((a[1] as u128) * (b[2] as u128));
-    t = t.wrapping_add((a[2] as u128) * (b[1] as u128));
-    t = t.wrapping_add((a[3] as u128) * (b[0] as u128));
+    t = super::mul_add(t, a[0], b[3]);
+    t = super::mul_add(t, a[1], b[2]);
+    t = super::mul_add(t, a[2], b[1]);
+    t = super::mul_add(t, a[3], b[0]);
     let v3 = (t as u64) & MASK;
     t >>= RADIX;
-    t = t.wrapping_add((a[0] as u128) * (b[4] as u128));
-    t = t.wrapping_add((a[1] as u128) * (b[3] as u128));
-    t = t.wrapping_add((a[2] as u128) * (b[2] as u128));
-    t = t.wrapping_add((a[3] as u128) * (b[1] as u128));
-    t = t.wrapping_add((a[4] as u128) * (b[0] as u128));
+    t = super::mul_add(t, a[0], b[4]);
+    t = super::mul_add(t, a[1], b[3]);
+    t = super::mul_add(t, a[2], b[2]);
+    t = super::mul_add(t, a[3], b[1]);
+    t = super::mul_add(t, a[4], b[0]);
     let v4 = (t as u64) & MASK;
     t >>= RADIX;
-    t = t.wrapping_add((a[0] as u128) * (b[5] as u128));
-    t = t.wrapping_add((a[1] as u128) * (b[4] as u128));
-    t = t.wrapping_add((a[2] as u128) * (b[3] as u128));
-    t = t.wrapping_add((a[3] as u128) * (b[2] as u128));
-    t = t.wrapping_add((a[4] as u128) * (b[1] as u128));
-    t = t.wrapping_add((a[5] as u128) * (b[0] as u128));
+    t = super::mul_add(t, a[0], b[5]);
+    t = super::mul_add(t, a[1], b[4]);
+    t = super::mul_add(t, a[2], b[3]);
+    t = super::mul_add(t, a[3], b[2]);
+    t = super::mul_add(t, a[4], b[1]);
+    t = super::mul_add(t, a[5], b[0]);
     t = t.wrapping_add((v0 as u128) * ptop);
     let v5 = (t as u64) & MASK;
     t >>= RADIX;
-    t = t.wrapping_add((a[1] as u128) * (b[5] as u128));
-    t = t.wrapping_add((a[2] as u128) * (b[4] as u128));
-    t = t.wrapping_add((a[3] as u128) * (b[3] as u128));
-    t = t.wrapping_add((a[4] as u128) * (b[2] as u128));
-    t = t.wrapping_add((a[5] as u128) * (b[1] as u128));
+    t = super::mul_add(t, a[1], b[5]);
+    t = super::mul_add(t, a[2], b[4]);
+    t = super::mul_add(t, a[3], b[3]);
+    t = super::mul_add(t, a[4], b[2]);
+    t = super::mul_add(t, a[5], b[1]);
     t = t.wrapping_add((v1 as u128) * ptop);
     c[0] = (t as u64) & MASK;
     t >>= RADIX;
-    t = t.wrapping_add((a[2] as u128) * (b[5] as u128));
-    t = t.wrapping_add((a[3] as u128) * (b[4] as u128));
-    t = t.wrapping_add((a[4] as u128) * (b[3] as u128));
-    t = t.wrapping_add((a[5] as u128) * (b[2] as u128));
+    t = super::mul_add(t, a[2], b[5]);
+    t = super::mul_add(t, a[3], b[4]);
+    t = super::mul_add(t, a[4], b[3]);
+    t = super::mul_add(t, a[5], b[2]);
     t = t.wrapping_add((v2 as u128) * ptop);
     c[1] = (t as u64) & MASK;
     t >>= RADIX;
-    t = t.wrapping_add((a[3] as u128) * (b[5] as u128));
-    t = t.wrapping_add((a[4] as u128) * (b[4] as u128));
-    t = t.wrapping_add((a[5] as u128) * (b[3] as u128));
+    t = super::mul_add(t, a[3], b[5]);
+    t = super::mul_add(t, a[4], b[4]);
+    t = super::mul_add(t, a[5], b[3]);
     t = t.wrapping_add((v3 as u128) * ptop);
     c[2] = (t as u64) & MASK;
     t >>= RADIX;
-    t = t.wrapping_add((a[4] as u128) * (b[5] as u128));
-    t = t.wrapping_add((a[5] as u128) * (b[4] as u128));
+    t = super::mul_add(t, a[4], b[5]);
+    t = super::mul_add(t, a[5], b[4]);
     t = t.wrapping_add((v4 as u128) * ptop);
     c[3] = (t as u64) & MASK;
     t >>= RADIX;
-    t = t.wrapping_add((a[5] as u128) * (b[5] as u128));
+    t = super::mul_add(t, a[5], b[5]);
     t = t.wrapping_add((v5 as u128) * ptop);
     c[4] = (t as u64) & MASK;
     t >>= RADIX;
@@ -278,81 +278,81 @@ pub(crate) fn modsqr(c: &mut [u64; NLIMBS], a: &[u64; NLIMBS]) {
     let mut t: u128 = 0;
     let mut tot: u128;
     tot = 0;
-    tot = tot.wrapping_add((a[0] as u128) * (a[0] as u128));
+    tot = super::mul_add(tot, a[0], a[0]);
     t = t.wrapping_add(tot);
     let v0 = (t as u64) & MASK;
     t >>= RADIX;
     tot = 0;
-    tot = tot.wrapping_add((a[0] as u128) * (a[1] as u128));
+    tot = super::mul_add(tot, a[0], a[1]);
     tot = tot.wrapping_mul(2);
     t = t.wrapping_add(tot);
     let v1 = (t as u64) & MASK;
     t >>= RADIX;
     tot = 0;
-    tot = tot.wrapping_add((a[0] as u128) * (a[2] as u128));
+    tot = super::mul_add(tot, a[0], a[2]);
     tot = tot.wrapping_mul(2);
-    tot = tot.wrapping_add((a[1] as u128) * (a[1] as u128));
+    tot = super::mul_add(tot, a[1], a[1]);
     t = t.wrapping_add(tot);
     let v2 = (t as u64) & MASK;
     t >>= RADIX;
     tot = 0;
-    tot = tot.wrapping_add((a[0] as u128) * (a[3] as u128));
-    tot = tot.wrapping_add((a[1] as u128) * (a[2] as u128));
+    tot = super::mul_add(tot, a[0], a[3]);
+    tot = super::mul_add(tot, a[1], a[2]);
     tot = tot.wrapping_mul(2);
     t = t.wrapping_add(tot);
     let v3 = (t as u64) & MASK;
     t >>= RADIX;
     tot = 0;
-    tot = tot.wrapping_add((a[0] as u128) * (a[4] as u128));
-    tot = tot.wrapping_add((a[1] as u128) * (a[3] as u128));
+    tot = super::mul_add(tot, a[0], a[4]);
+    tot = super::mul_add(tot, a[1], a[3]);
     tot = tot.wrapping_mul(2);
-    tot = tot.wrapping_add((a[2] as u128) * (a[2] as u128));
+    tot = super::mul_add(tot, a[2], a[2]);
     t = t.wrapping_add(tot);
     let v4 = (t as u64) & MASK;
     t >>= RADIX;
     tot = 0;
-    tot = tot.wrapping_add((a[0] as u128) * (a[5] as u128));
-    tot = tot.wrapping_add((a[1] as u128) * (a[4] as u128));
-    tot = tot.wrapping_add((a[2] as u128) * (a[3] as u128));
+    tot = super::mul_add(tot, a[0], a[5]);
+    tot = super::mul_add(tot, a[1], a[4]);
+    tot = super::mul_add(tot, a[2], a[3]);
     tot = tot.wrapping_mul(2);
     t = t.wrapping_add(tot);
     t = t.wrapping_add((v0 as u128) * ptop);
     let v5 = (t as u64) & MASK;
     t >>= RADIX;
     tot = 0;
-    tot = tot.wrapping_add((a[1] as u128) * (a[5] as u128));
-    tot = tot.wrapping_add((a[2] as u128) * (a[4] as u128));
+    tot = super::mul_add(tot, a[1], a[5]);
+    tot = super::mul_add(tot, a[2], a[4]);
     tot = tot.wrapping_mul(2);
-    tot = tot.wrapping_add((a[3] as u128) * (a[3] as u128));
+    tot = super::mul_add(tot, a[3], a[3]);
     t = t.wrapping_add(tot);
     t = t.wrapping_add((v1 as u128) * ptop);
     c[0] = (t as u64) & MASK;
     t >>= RADIX;
     tot = 0;
-    tot = tot.wrapping_add((a[2] as u128) * (a[5] as u128));
-    tot = tot.wrapping_add((a[3] as u128) * (a[4] as u128));
+    tot = super::mul_add(tot, a[2], a[5]);
+    tot = super::mul_add(tot, a[3], a[4]);
     tot = tot.wrapping_mul(2);
     t = t.wrapping_add(tot);
     t = t.wrapping_add((v2 as u128) * ptop);
     c[1] = (t as u64) & MASK;
     t >>= RADIX;
     tot = 0;
-    tot = tot.wrapping_add((a[3] as u128) * (a[5] as u128));
+    tot = super::mul_add(tot, a[3], a[5]);
     tot = tot.wrapping_mul(2);
-    tot = tot.wrapping_add((a[4] as u128) * (a[4] as u128));
+    tot = super::mul_add(tot, a[4], a[4]);
     t = t.wrapping_add(tot);
     t = t.wrapping_add((v3 as u128) * ptop);
     c[2] = (t as u64) & MASK;
     t >>= RADIX;
     tot = 0;
-    tot = tot.wrapping_add((a[4] as u128) * (a[5] as u128));
+    tot = super::mul_add(tot, a[4], a[5]);
     tot = tot.wrapping_mul(2);
     t = t.wrapping_add(tot);
     t = t.wrapping_add((v4 as u128) * ptop);
     c[3] = (t as u64) & MASK;
     t >>= RADIX;
     tot = 0;
-    tot = tot.wrapping_add((a[5] as u128) * (a[5] as u128));
+    tot = super::mul_add(tot, a[5], a[5]);
     t = t.wrapping_add(tot);
     t = t.wrapping_add((v5 as u128) * ptop);
     c[4] = (t as u64) & MASK;
@@ -555,39 +555,28 @@ pub(crate) fn redc(m: &mut [u64; NLIMBS], n: &[u64; NLIMBS]) {
 /// `1` if `a == 0 mod p`, else `0`.
 #[inline]
 pub(crate) fn modis0(a: &[u64; NLIMBS]) -> u32 {
-    let mut c = [0u64; NLIMBS];
-    redc(&mut c, a);
-    let mut d: u64 = 0;
-    for limb in c.iter() {
-        d |= *limb;
+    // The only zero representatives in [0, 2p) are 0 and p.
+    let mut zero = a[5];
+    let mut prime = a[5] ^ (PTOP - 1);
+    for &limb in &a[..5] {
+        zero |= limb;
+        prime |= limb ^ MASK;
     }
-    (1 & (d.wrapping_sub(1) >> RADIX)) as u32
+    u32::from((zero == 0) | (prime == 0))
 }
 
 /// `1` if `a == 1 mod p`, else `0`.
 #[inline]
 pub(crate) fn modis1(a: &[u64; NLIMBS]) -> u32 {
-    let mut c = [0u64; NLIMBS];
-    redc(&mut c, a);
-    let mut d: u64 = 0;
-    for limb in c.iter().skip(1) {
-        d |= *limb;
-    }
-    (1 & (d.wrapping_sub(1) >> RADIX) & ((c[0] ^ 1).wrapping_sub(1) >> RADIX)) as u32
+    modcmp(a, &ONE)
 }
 
 /// `1` if `a == b mod p`, else `0`.
 #[inline]
 pub(crate) fn modcmp(a: &[u64; NLIMBS], b: &[u64; NLIMBS]) -> u32 {
-    let mut c = [0u64; NLIMBS];
-    let mut d = [0u64; NLIMBS];
-    redc(&mut c, a);
-    redc(&mut d, b);
-    let mut eq: u64 = 1;
-    for i in 0..NLIMBS {
-        eq &= (c[i] ^ d[i]).wrapping_sub(1) >> RADIX;
-    }
-    (eq & 1) as u32
+    let mut diff = [0u64; NLIMBS];
+    modsub(&mut diff, a, b);
+    modis0(&diff)
 }
 
 /// `1` if `x` is a square (or zero), else `0`. `h` is the optional
@@ -754,6 +743,51 @@ fn as_arr_mut(a: &mut Limbs) -> &mut [u64; NLIMBS] {
 
 #[cfg(not(target_arch = "x86_64"))]
 impl FpBackend for P324_3 {
+    #[cfg(all(target_arch = "riscv64", feature = "ckb-vm"))]
+    #[inline]
+    fn fp2_hadamard_assign(
+        x: &mut super::Fp2<Self>,
+        y: &mut super::Fp2<Self>,
+        z: &mut super::Fp2<Self>,
+        t: &mut super::Fp2<Self>,
+    ) {
+        super::p324_3_ckb::hadamard(
+            as_arr_mut(&mut x.re.limbs),
+            as_arr_mut(&mut y.re.limbs),
+            as_arr_mut(&mut z.re.limbs),
+            as_arr_mut(&mut t.re.limbs),
+        );
+        super::p324_3_ckb::hadamard(
+            as_arr_mut(&mut x.im.limbs),
+            as_arr_mut(&mut y.im.limbs),
+            as_arr_mut(&mut z.im.limbs),
+            as_arr_mut(&mut t.im.limbs),
+        );
+    }
+
+    #[cfg(all(target_arch = "riscv64", feature = "ckb-vm"))]
+    #[inline]
+    fn fp2_mul(re: &mut Limbs, im: &mut Limbs, ar: &Limbs, ai: &Limbs, br: &Limbs, bi: &Limbs) {
+        super::p324_3_ckb::fp2_mul(
+            as_arr_mut(re),
+            as_arr_mut(im),
+            as_arr(ar),
+            as_arr(ai),
+            as_arr(br),
+            as_arr(bi),
+        );
+    }
+
+    #[cfg(all(target_arch = "riscv64", feature = "ckb-vm"))]
+    #[inline]
+    fn fp2_sqr(out_re: &mut Limbs, out_im: &mut Limbs, re: &Limbs, im: &Limbs) {
+        super::p324_3_ckb::fp2_sqr(
+            as_arr_mut(out_re),
+            as_arr_mut(out_im),
+            as_arr(re),
+            as_arr(im),
+        );
+    }
     #[inline]
     fn set_zero(out: &mut Limbs) {
         *as_arr_mut(out) = ZERO;

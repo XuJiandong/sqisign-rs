@@ -427,7 +427,7 @@ fn generate(s: &PrimeSpec) -> String {
          \x20   let mut carry: i64 = n[0] as i64;\n\
          \x20   carry >>= RADIX;\n\
          \x20   n[0] &= MASK;\n\
-         \x20   for limb in n.iter_mut().take({top}).skip(1) {{\n\
+         \x20   for limb in &mut n[1..{top}] {{\n\
          \x20       carry = carry.wrapping_add(*limb as i64);\n\
          \x20       *limb = (carry as u64) & MASK;\n\
          \x20       carry >>= RADIX;\n\
@@ -536,11 +536,7 @@ fn generate(s: &PrimeSpec) -> String {
         let hi = k.min(n - 1);
         for i in lo..=hi {
             let j = k - i;
-            writeln!(
-                o,
-                "    t = t.wrapping_add((a[{i}] as u128) * (b[{j}] as u128));"
-            )
-            .unwrap();
+            writeln!(o, "    t = super::mul_add(t, a[{i}], b[{j}]);").unwrap();
         }
         if k >= n - 1 {
             writeln!(
@@ -587,21 +583,13 @@ fn generate(s: &PrimeSpec) -> String {
         }
         writeln!(o, "    tot = 0;").unwrap();
         for (i, j) in &cross {
-            writeln!(
-                o,
-                "    tot = tot.wrapping_add((a[{i}] as u128) * (a[{j}] as u128));"
-            )
-            .unwrap();
+            writeln!(o, "    tot = super::mul_add(tot, a[{i}], a[{j}]);").unwrap();
         }
         if !cross.is_empty() {
             writeln!(o, "    tot = tot.wrapping_mul(2);").unwrap();
         }
         if let Some(i) = square {
-            writeln!(
-                o,
-                "    tot = tot.wrapping_add((a[{i}] as u128) * (a[{i}] as u128));"
-            )
-            .unwrap();
+            writeln!(o, "    tot = super::mul_add(tot, a[{i}], a[{i}]);").unwrap();
         }
         writeln!(o, "    t = t.wrapping_add(tot);").unwrap();
         if k >= n - 1 {
@@ -716,37 +704,26 @@ fn generate(s: &PrimeSpec) -> String {
          /// `1` if `a == 0 mod p`, else `0`.\n\
          #[inline]\n\
          pub(crate) fn modis0(a: &[u64; NLIMBS]) -> u32 {{\n\
-         \x20   let mut c = [0u64; NLIMBS];\n\
-         \x20   redc(&mut c, a);\n\
-         \x20   let mut d: u64 = 0;\n\
-         \x20   for limb in c.iter() {{\n\
-         \x20       d |= *limb;\n\
+         \x20   // The only zero representatives in [0, 2p) are 0 and p.\n\
+         \x20   let mut zero = a[{top}];\n\
+         \x20   let mut prime = a[{top}] ^ (PTOP - 1);\n\
+         \x20   for &limb in &a[..{top}] {{\n\
+         \x20       zero |= limb;\n\
+         \x20       prime |= limb ^ MASK;\n\
          \x20   }}\n\
-         \x20   (1 & (d.wrapping_sub(1) >> RADIX)) as u32\n\
+         \x20   u32::from((zero == 0) | (prime == 0))\n\
          }}\n\n\
          /// `1` if `a == 1 mod p`, else `0`.\n\
          #[inline]\n\
          pub(crate) fn modis1(a: &[u64; NLIMBS]) -> u32 {{\n\
-         \x20   let mut c = [0u64; NLIMBS];\n\
-         \x20   redc(&mut c, a);\n\
-         \x20   let mut d: u64 = 0;\n\
-         \x20   for limb in c.iter().skip(1) {{\n\
-         \x20       d |= *limb;\n\
-         \x20   }}\n\
-         \x20   (1 & (d.wrapping_sub(1) >> RADIX) & ((c[0] ^ 1).wrapping_sub(1) >> RADIX)) as u32\n\
+         \x20   modcmp(a, &ONE)\n\
          }}\n\n\
          /// `1` if `a == b mod p`, else `0`.\n\
          #[inline]\n\
          pub(crate) fn modcmp(a: &[u64; NLIMBS], b: &[u64; NLIMBS]) -> u32 {{\n\
-         \x20   let mut c = [0u64; NLIMBS];\n\
-         \x20   let mut d = [0u64; NLIMBS];\n\
-         \x20   redc(&mut c, a);\n\
-         \x20   redc(&mut d, b);\n\
-         \x20   let mut eq: u64 = 1;\n\
-         \x20   for i in 0..NLIMBS {{\n\
-         \x20       eq &= (c[i] ^ d[i]).wrapping_sub(1) >> RADIX;\n\
-         \x20   }}\n\
-         \x20   (eq & 1) as u32\n\
+         \x20   let mut diff = [0u64; NLIMBS];\n\
+         \x20   modsub(&mut diff, a, b);\n\
+         \x20   modis0(&diff)\n\
          }}\n\n\
          /// `1` if `x` is a square (or zero), else `0`. `h` is the optional\n\
          /// precomputed progenitor.\n\
@@ -890,6 +867,30 @@ fn generate(s: &PrimeSpec) -> String {
     .unwrap();
 
     // ---- trait impl ------------------------------------------------------------
+    let ckb_fp2 = if s.name == "p324_3" {
+        r#"
+    #[cfg(all(target_arch = "riscv64", feature = "ckb-vm"))]
+    #[inline]
+    fn fp2_hadamard_assign(x: &mut super::Fp2<Self>, y: &mut super::Fp2<Self>, z: &mut super::Fp2<Self>, t: &mut super::Fp2<Self>) {
+        super::p324_3_ckb::hadamard(as_arr_mut(&mut x.re.limbs), as_arr_mut(&mut y.re.limbs), as_arr_mut(&mut z.re.limbs), as_arr_mut(&mut t.re.limbs));
+        super::p324_3_ckb::hadamard(as_arr_mut(&mut x.im.limbs), as_arr_mut(&mut y.im.limbs), as_arr_mut(&mut z.im.limbs), as_arr_mut(&mut t.im.limbs));
+    }
+
+    #[cfg(all(target_arch = "riscv64", feature = "ckb-vm"))]
+    #[inline]
+    fn fp2_mul(re: &mut Limbs, im: &mut Limbs, ar: &Limbs, ai: &Limbs, br: &Limbs, bi: &Limbs) {
+        super::p324_3_ckb::fp2_mul(as_arr_mut(re), as_arr_mut(im), as_arr(ar), as_arr(ai), as_arr(br), as_arr(bi));
+    }
+
+    #[cfg(all(target_arch = "riscv64", feature = "ckb-vm"))]
+    #[inline]
+    fn fp2_sqr(out_re: &mut Limbs, out_im: &mut Limbs, re: &Limbs, im: &Limbs) {
+        super::p324_3_ckb::fp2_sqr(as_arr_mut(out_re), as_arr_mut(out_im), as_arr(re), as_arr(im));
+    }
+"#
+    } else {
+        ""
+    };
     let asm_gate = if s.asm {
         "#[cfg(not(target_arch = \"x86_64\"))]\n"
     } else {
@@ -906,7 +907,7 @@ fn generate(s: &PrimeSpec) -> String {
          fn as_arr_mut(a: &mut Limbs) -> &mut [u64; NLIMBS] {{\n\
          \x20   <&mut [u64; NLIMBS]>::try_from(&mut a[..]).expect(\"invariant: FpLimbs == NLIMBS\")\n\
          }}\n\n\
-         {asm_gate}impl FpBackend for {upper} {{\n\
+         {asm_gate}impl FpBackend for {upper} {{\n{ckb_fp2}\
          \x20   #[inline]\n\
          \x20   fn set_zero(out: &mut Limbs) {{\n\
          \x20       *as_arr_mut(out) = ZERO;\n\

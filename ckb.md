@@ -3,7 +3,8 @@
 The standalone `ckb-std` app verifies standard round-3 signatures at levels I,
 III, and V. It builds the `no_std` verifier for little-endian RV64IMC with
 Zba, Zbb, Zbc, and Zbs, and lowers atomics for the single-threaded VM.
-Key generation and signing run on the host.
+The app enables the verifier’s `ckb-vm` feature for RV64 macro-op fusion.
+Key generation and signing run on the host. [Cycle measurements and profile](todo.md#ckb-vm-macro-op-fusion)
 
 With Python 3 and `ckb-debugger` on your path, run the smoke tests from the repository root.
 

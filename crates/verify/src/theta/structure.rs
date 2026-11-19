@@ -8,16 +8,9 @@ use subtle::Choice;
 /// `(x + y + z + t : x - y + z - t : x + y - z - t : x - y - z + t)`.
 #[inline]
 pub fn hadamard<L: FpBackend>(p: &ThetaPoint<L>) -> ThetaPoint<L> {
-    let t1 = p.x.add(&p.y);
-    let t2 = p.x.sub(&p.y);
-    let t3 = p.z.add(&p.t);
-    let t4 = p.z.sub(&p.t);
-    ThetaPoint {
-        x: t1.add(&t3),
-        y: t2.add(&t4),
-        z: t1.sub(&t3),
-        t: t2.sub(&t4),
-    }
+    let mut out = p.clone();
+    hadamard_assign(&mut out);
+    out
 }
 
 /// Coordinate-wise projective inverse `(yzt : xzt : xyt : xyz)`, six
@@ -34,27 +27,10 @@ pub fn invert_point<L: FpBackend>(p: &ThetaPoint<L>) -> ThetaPoint<L> {
     }
 }
 
-/// The Hadamard transform in place (P28): two temporaries, the four
-/// coordinates rewritten where they are.
+/// Apply the four-point Hadamard transform in place.
 #[inline]
 pub fn hadamard_assign<L: FpBackend>(p: &mut ThetaPoint<L>) {
-    // (x, y, z, t) -> (x + y, x - y, z + t, z - t) -> (t1 + t3, t2 + t4, t1 - t3, t2 - t4)
-    let mut t1 = p.x.clone();
-    t1.add_assign(&p.y); // t1 = x + y
-    p.x.sub_assign(&p.y); // x <- t2 = x - y
-    let mut t3 = p.z.clone();
-    t3.add_assign(&p.t); // t3 = z + t
-    p.z.sub_assign(&p.t); // z <- t4 = z - t
-                          // then y <- t2 + t4 and t <- t2 - t4
-    p.y = p.x.clone();
-    p.y.add_assign(&p.z);
-    p.t = p.x.clone();
-    p.t.sub_assign(&p.z);
-    // x <- t1 + t3, z <- t1 - t3
-    p.x = t1.clone();
-    p.x.add_assign(&t3);
-    p.z = t1;
-    p.z.sub_assign(&t3);
+    L::fp2_hadamard_assign(&mut p.x, &mut p.y, &mut p.z, &mut p.t);
 }
 
 /// Coordinate-wise square in place (P28).

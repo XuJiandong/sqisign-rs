@@ -45,11 +45,16 @@
 //! Round 2 is not supported: round-2 keys and signatures are not accepted
 //! and there is no conversion (0.5.0 removed the round-2 implementation).
 #![no_std]
-// No unsafe code, except on x86-64: the field backends' `asm!` blocks and
-// the `cpuid` that decides whether to run them (`fp::dispatch`), the only
-// modules allowed to opt out.
-#![cfg_attr(not(target_arch = "x86_64"), forbid(unsafe_code))]
-#![cfg_attr(target_arch = "x86_64", deny(unsafe_code))]
+// Assembly is confined to the x86-64 field backends and the opt-in
+// register-only CKB-VM primitives.
+#![deny(unsafe_code)]
+#![cfg_attr(
+    not(any(
+        target_arch = "x86_64",
+        all(target_arch = "riscv64", feature = "ckb-vm")
+    )),
+    forbid(unsafe_code)
+)]
 #![warn(missing_docs)]
 
 #[cfg(not(target_endian = "little"))]
